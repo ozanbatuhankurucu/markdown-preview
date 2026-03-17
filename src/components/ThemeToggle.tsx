@@ -17,32 +17,35 @@ export function ThemeToggle() {
   useEffect(() => setMounted(true), []);
 
   if (!mounted) {
-    return <div className="flex h-9 w-[108px] rounded-lg" />;
+    return <div className="h-8 w-[180px]" />;
   }
 
   return (
     <div
-      className="flex items-center rounded-lg p-0.5 gap-0.5"
+      className="flex items-center rounded-md p-0.5"
       style={{ background: "var(--bg-tertiary)" }}
     >
-      {themes.map(({ value, icon: Icon, label }) => (
-        <button
-          key={value}
-          onClick={() => setTheme(value)}
-          aria-label={`Switch to ${label} theme`}
-          className="relative rounded-md p-1.5 transition-all duration-200 cursor-pointer"
-          style={{
-            background: theme === value ? "var(--bg-primary)" : "transparent",
-            color: theme === value ? "var(--accent)" : "var(--fg-muted)",
-            boxShadow:
-              theme === value
-                ? "0 1px 3px rgba(0,0,0,0.1)"
+      {themes.map(({ value, icon: Icon, label }) => {
+        const isActive = theme === value;
+        return (
+          <button
+            key={value}
+            onClick={() => setTheme(value)}
+            aria-label={`Switch to ${label} theme`}
+            className="flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer"
+            style={{
+              background: isActive ? "var(--bg-primary)" : "transparent",
+              color: isActive ? "var(--fg-primary)" : "var(--fg-muted)",
+              boxShadow: isActive
+                ? "0 1px 2px rgba(0,0,0,0.05)"
                 : "none",
-          }}
-        >
-          <Icon size={16} />
-        </button>
-      ))}
+            }}
+          >
+            <Icon size={12} />
+            <span>{label}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }

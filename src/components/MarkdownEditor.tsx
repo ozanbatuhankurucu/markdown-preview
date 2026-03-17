@@ -66,7 +66,6 @@ export function MarkdownEditor({ value, onChange, editorRef }: MarkdownEditorPro
         style={{
           background: "var(--editor-bg)",
           color: "var(--fg-primary)",
-          caretColor: "var(--accent)",
         }}
         spellCheck={false}
         autoComplete="off"

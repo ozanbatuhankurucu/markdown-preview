@@ -21,15 +21,14 @@ export function MarkdownPreview({ markdown, previewRef }: MarkdownPreviewProps) 
     >
       {markdown.trim() ? (
         <article
-          className="markdown-preview prose prose-slate dark:prose-invert max-w-none
-            prose-headings:font-bold prose-headings:tracking-tight
-            prose-h1:text-3xl prose-h1:border-b prose-h1:pb-2
-            prose-h2:text-2xl prose-h2:mt-8
-            prose-h3:text-xl prose-h3:mt-6
+          className="markdown-preview prose prose-zinc dark:prose-invert max-w-none
+            prose-headings:font-semibold prose-headings:tracking-tight
+            prose-h1:text-2xl prose-h1:pb-2
+            prose-h2:text-xl prose-h2:mt-8
+            prose-h3:text-lg prose-h3:mt-6
             prose-p:leading-relaxed
             prose-pre:p-0 prose-pre:bg-transparent
             prose-code:before:content-none prose-code:after:content-none"
-          style={{ "--tw-prose-hr": "var(--border-color)" } as React.CSSProperties}
         >
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
@@ -47,9 +46,9 @@ export function MarkdownPreview({ markdown, previewRef }: MarkdownPreviewProps) 
               ),
               pre: ({ children, ...props }) => (
                 <pre
-                  className="overflow-x-auto rounded-lg p-4 text-sm leading-relaxed"
+                  className="overflow-x-auto rounded-md p-4 text-sm leading-relaxed"
                   style={{
-                    background: "var(--bg-tertiary)",
+                    background: "var(--code-bg)",
                     border: "1px solid var(--border-color)",
                   }}
                   {...props}
@@ -63,7 +62,7 @@ export function MarkdownPreview({ markdown, previewRef }: MarkdownPreviewProps) 
                   src={src}
                   alt={alt || ""}
                   loading="lazy"
-                  className="rounded-lg shadow-sm"
+                  className="rounded-md"
                   {...props}
                 />
               ),
@@ -73,10 +72,10 @@ export function MarkdownPreview({ markdown, previewRef }: MarkdownPreviewProps) 
           </ReactMarkdown>
         </article>
       ) : (
-        <div className="flex flex-col items-center justify-center h-full gap-3 opacity-40">
+        <div className="flex flex-col items-center justify-center h-full gap-2 opacity-30">
           <svg
-            width="48"
-            height="48"
+            width="40"
+            height="40"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -90,7 +89,7 @@ export function MarkdownPreview({ markdown, previewRef }: MarkdownPreviewProps) 
             <line x1="16" y1="17" x2="8" y2="17" />
             <line x1="10" y1="9" x2="8" y2="9" />
           </svg>
-          <p className="text-sm font-medium">Start typing markdown to see the preview</p>
+          <p className="text-sm">Type markdown to see the preview</p>
         </div>
       )}
     </div>

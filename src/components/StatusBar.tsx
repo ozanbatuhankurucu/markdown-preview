@@ -18,42 +18,48 @@ export function StatusBar({ markdown }: StatusBarProps) {
 
   return (
     <footer
-      className="flex items-center justify-between px-4 py-1.5 border-t text-xs shrink-0"
+      className="flex items-center justify-between px-4 py-1 border-t text-[11px] shrink-0"
       style={{
         borderColor: "var(--border-color)",
         background: "var(--bg-secondary)",
         color: "var(--fg-muted)",
       }}
     >
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         <span>
-          <strong className="font-semibold" style={{ color: "var(--fg-secondary)" }}>
+          <strong className="font-medium" style={{ color: "var(--fg-secondary)" }}>
             {stats.words.toLocaleString()}
           </strong>{" "}
           words
         </span>
         <span>
-          <strong className="font-semibold" style={{ color: "var(--fg-secondary)" }}>
+          <strong className="font-medium" style={{ color: "var(--fg-secondary)" }}>
             {stats.characters.toLocaleString()}
           </strong>{" "}
-          characters
+          chars
         </span>
         <span>
-          <strong className="font-semibold" style={{ color: "var(--fg-secondary)" }}>
+          <strong className="font-medium" style={{ color: "var(--fg-secondary)" }}>
             {stats.lines.toLocaleString()}
           </strong>{" "}
           lines
         </span>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
         <span className="hidden sm:inline">
-          <kbd className="px-1 py-0.5 rounded text-[10px] font-mono" style={{ background: "var(--bg-tertiary)" }}>
+          <kbd
+            className="px-1 py-0.5 rounded text-[10px] font-mono"
+            style={{ background: "var(--bg-tertiary)" }}
+          >
             Ctrl+S
           </kbd>{" "}
           Save
         </span>
         <span className="hidden sm:inline">
-          <kbd className="px-1 py-0.5 rounded text-[10px] font-mono" style={{ background: "var(--bg-tertiary)" }}>
+          <kbd
+            className="px-1 py-0.5 rounded text-[10px] font-mono"
+            style={{ background: "var(--bg-tertiary)" }}
+          >
             Ctrl+Shift+C
           </kbd>{" "}
           Copy HTML
