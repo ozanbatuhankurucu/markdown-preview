@@ -1,41 +1,67 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useSyncExternalStore } from "react";
+
+function subscribeToStorage(callback: () => void) {
+  window.addEventListener("storage", callback);
+  return () => window.removeEventListener("storage", callback);
+}
+
+const emptySubscribe = () => () => {};
+const returnTrue = () => true;
+const returnFalse = () => false;
+const returnNull = () => null;
 
 export function useLocalStorage<T>(
   key: string,
   initialValue: T
-): [T, (value: T | ((prev: T) => T)) => void] {
-  const [storedValue, setStoredValue] = useState<T>(initialValue);
-  const [isHydrated, setIsHydrated] = useState(false);
-
-  useEffect(() => {
+): [T, (value: T | ((prev: T) => T)) => void, boolean] {
+  const getSnapshot = useCallback(() => {
     try {
-      const item = window.localStorage.getItem(key);
-      if (item !== null) {
-        setStoredValue(JSON.parse(item));
-      }
+      return window.localStorage.getItem(key);
     } catch {
-      // localStorage not available or parse error
+      return null;
     }
-    setIsHydrated(true);
   }, [key]);
 
+  const raw = useSyncExternalStore(subscribeToStorage, getSnapshot, returnNull);
+  const isHydrated = useSyncExternalStore(emptySubscribe, returnTrue, returnFalse);
+
+  let value: T = initialValue;
+  if (raw !== null) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed !== undefined) {
+        value = parsed;
+      }
+    } catch {
+      // Corrupted JSON — will be overwritten on next edit
+    }
+  }
+
   const setValue = useCallback(
-    (value: T | ((prev: T) => T)) => {
-      setStoredValue((prev) => {
-        const valueToStore =
-          value instanceof Function ? value(prev) : value;
-        try {
-          window.localStorage.setItem(key, JSON.stringify(valueToStore));
-        } catch {
-          // localStorage not available
+    (newValue: T | ((prev: T) => T)) => {
+      let current = initialValue;
+      try {
+        const item = window.localStorage.getItem(key);
+        if (item !== null) {
+          current = JSON.parse(item);
         }
-        return valueToStore;
-      });
+      } catch {
+        // fall back to initialValue
+      }
+
+      const resolved = newValue instanceof Function ? newValue(current) : newValue;
+      try {
+        window.localStorage.setItem(key, JSON.stringify(resolved));
+      } catch {
+        // quota exceeded or unavailable
+      }
+
+      window.dispatchEvent(new StorageEvent("storage", { key }));
     },
-    [key]
+    [key, initialValue]
   );
 
-  return [isHydrated ? storedValue : initialValue, setValue];
+  return [value, setValue, isHydrated];
 }

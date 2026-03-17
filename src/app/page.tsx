@@ -8,7 +8,10 @@ import { useLocalStorage } from "@/lib/useLocalStorage";
 import { defaultMarkdown } from "@/lib/default-markdown";
 
 export default function Home() {
-  const [markdown, setMarkdown] = useLocalStorage("markdown-content", defaultMarkdown);
+  const [markdown, setMarkdown, isHydrated] = useLocalStorage(
+    "markdown-content",
+    defaultMarkdown
+  );
   const editorRef = useRef<HTMLTextAreaElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
 
@@ -19,7 +22,6 @@ export default function Home() {
     try {
       await navigator.clipboard.writeText(html);
     } catch {
-      // Fallback
       const textarea = document.createElement("textarea");
       textarea.value = html;
       document.body.appendChild(textarea);
@@ -30,7 +32,9 @@ export default function Home() {
   }, []);
 
   const handleDownload = useCallback(() => {
-    const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
+    const blob = new Blob([markdown], {
+      type: "text/markdown;charset=utf-8",
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -65,7 +69,6 @@ export default function Home() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleDownload, handleCopyHtml]);
 
-  // Scroll sync: editor scroll -> preview scroll (proportional)
   useEffect(() => {
     const editor = editorRef.current;
     const preview = previewRef.current;
@@ -87,6 +90,15 @@ export default function Home() {
     editor.addEventListener("scroll", handleEditorScroll);
     return () => editor.removeEventListener("scroll", handleEditorScroll);
   }, []);
+
+  if (!isHydrated) {
+    return (
+      <div
+        className="flex flex-col h-dvh"
+        style={{ background: "var(--bg-primary)" }}
+      />
+    );
+  }
 
   return (
     <div className="flex flex-col h-dvh">
