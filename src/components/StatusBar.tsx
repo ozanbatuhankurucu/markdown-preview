@@ -4,9 +4,11 @@ import { useMemo } from "react";
 
 interface StatusBarProps {
   markdown: string;
+  syncScroll: boolean;
+  onSyncScrollChange: (value: boolean) => void;
 }
 
-export function StatusBar({ markdown }: StatusBarProps) {
+export function StatusBar({ markdown, syncScroll, onSyncScrollChange }: StatusBarProps) {
   const stats = useMemo(() => {
     const lines = markdown.split("\n").length;
     const characters = markdown.length;
@@ -44,6 +46,22 @@ export function StatusBar({ markdown }: StatusBarProps) {
           </strong>{" "}
           lines
         </span>
+
+        <div
+          className="w-px h-3"
+          style={{ background: "var(--border-color)" }}
+        />
+
+        <label className="flex items-center gap-1.5 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={syncScroll}
+            onChange={(e) => onSyncScrollChange(e.target.checked)}
+            className="accent-current w-3 h-3 cursor-pointer"
+            style={{ accentColor: "var(--fg-secondary)" }}
+          />
+          <span>Sync scroll</span>
+        </label>
       </div>
       <div className="flex items-center gap-3">
         <span className="hidden sm:inline">

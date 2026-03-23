@@ -7,6 +7,7 @@ interface HeaderProps {
   onCopyHtml: () => void;
   onDownload: () => void;
   onClear: () => void;
+  isDownloadDisabled?: boolean;
 }
 
 function ActionButton({
@@ -14,22 +15,26 @@ function ActionButton({
   icon: Icon,
   label,
   variant = "default",
+  disabled = false,
 }: {
   onClick: () => void;
   icon: React.ComponentType<{ size?: number }>;
   label: string;
   variant?: "default" | "danger";
+  disabled?: boolean;
 }) {
   return (
     <button
       onClick={onClick}
       title={label}
-      className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors cursor-pointer"
+      disabled={disabled}
+      className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
       style={{
         color: variant === "danger" ? "#ef4444" : "var(--fg-secondary)",
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.background = "var(--bg-tertiary)";
+        if (!e.currentTarget.disabled)
+          e.currentTarget.style.background = "var(--bg-tertiary)";
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.background = "transparent";
@@ -41,7 +46,7 @@ function ActionButton({
   );
 }
 
-export function Header({ onCopyHtml, onDownload, onClear }: HeaderProps) {
+export function Header({ onCopyHtml, onDownload, onClear, isDownloadDisabled }: HeaderProps) {
   return (
     <header
       className="flex items-center justify-between px-4 py-2 border-b shrink-0"
@@ -73,7 +78,7 @@ export function Header({ onCopyHtml, onDownload, onClear }: HeaderProps) {
 
       <div className="flex items-center gap-1">
         <ActionButton onClick={onCopyHtml} icon={Copy} label="Copy HTML" />
-        <ActionButton onClick={onDownload} icon={Download} label="Download" />
+        <ActionButton onClick={onDownload} icon={Download} label="Download" disabled={isDownloadDisabled} />
         <ActionButton onClick={onClear} icon={Trash2} label="Clear" variant="danger" />
 
         <div
