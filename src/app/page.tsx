@@ -123,7 +123,7 @@ export default function Home() {
       editor.removeEventListener("scroll", handleEditorScroll);
       preview.removeEventListener("scroll", handlePreviewScroll);
     };
-  }, [syncScroll]);
+  }, [syncScroll, isHydrated]);
 
   if (!isHydrated) {
     return (
