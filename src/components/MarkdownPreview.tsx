@@ -1,7 +1,7 @@
 "use client";
 
-import { RefObject } from "react";
-import ReactMarkdown from "react-markdown";
+import { memo, RefObject, useMemo } from "react";
+import ReactMarkdown, { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import rehypeRaw from "rehype-raw";
@@ -12,12 +12,56 @@ interface MarkdownPreviewProps {
   previewRef: RefObject<HTMLDivElement | null>;
 }
 
-export function MarkdownPreview({ markdown, previewRef }: MarkdownPreviewProps) {
+const remarkPlugins = [remarkGfm];
+const rehypePlugins = [rehypeRaw, rehypeSlug, rehypeHighlight];
+
+export const MarkdownPreview = memo(function MarkdownPreview({
+  markdown,
+  previewRef,
+}: MarkdownPreviewProps) {
+  const components = useMemo<Components>(
+    () => ({
+      a: ({ children, href, ...props }) => (
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          {...props}
+        >
+          {children}
+        </a>
+      ),
+      pre: ({ children, ...props }) => (
+        <pre
+          className="overflow-x-auto rounded-md text-sm leading-relaxed"
+          style={{
+            background: "var(--code-bg)",
+            border: "1px solid var(--border-color)",
+          }}
+          {...props}
+        >
+          {children}
+        </pre>
+      ),
+      img: ({ src, alt, ...props }) => (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={src}
+          alt={alt || ""}
+          loading="lazy"
+          className="rounded-md"
+          {...props}
+        />
+      ),
+    }),
+    []
+  );
+
   return (
     <div
       ref={previewRef}
       className="flex-1 overflow-auto p-6 md:p-8 min-h-0"
-      style={{ background: "var(--preview-bg)" }}
+      style={{ background: "var(--preview-bg)", willChange: "scroll-position" }}
     >
       {markdown.trim() ? (
         <article
@@ -31,42 +75,9 @@ export function MarkdownPreview({ markdown, previewRef }: MarkdownPreviewProps) 
             prose-code:before:content-none prose-code:after:content-none"
         >
           <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            rehypePlugins={[rehypeRaw, rehypeSlug, rehypeHighlight]}
-            components={{
-              a: ({ children, href, ...props }) => (
-                <a
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  {...props}
-                >
-                  {children}
-                </a>
-              ),
-              pre: ({ children, ...props }) => (
-                <pre
-                  className="overflow-x-auto rounded-md p-4 text-sm leading-relaxed"
-                  style={{
-                    background: "var(--code-bg)",
-                    border: "1px solid var(--border-color)",
-                  }}
-                  {...props}
-                >
-                  {children}
-                </pre>
-              ),
-              img: ({ src, alt, ...props }) => (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={src}
-                  alt={alt || ""}
-                  loading="lazy"
-                  className="rounded-md"
-                  {...props}
-                />
-              ),
-            }}
+            remarkPlugins={remarkPlugins}
+            rehypePlugins={rehypePlugins}
+            components={components}
           >
             {markdown}
           </ReactMarkdown>
@@ -94,4 +105,4 @@ export function MarkdownPreview({ markdown, previewRef }: MarkdownPreviewProps) 
       )}
     </div>
   );
-}
+});

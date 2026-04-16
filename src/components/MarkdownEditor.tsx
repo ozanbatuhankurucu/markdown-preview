@@ -66,6 +66,7 @@ export function MarkdownEditor({ value, onChange, editorRef }: MarkdownEditorPro
         style={{
           background: "var(--editor-bg)",
           color: "var(--fg-primary)",
+          willChange: "scroll-position",
         }}
         spellCheck={false}
         autoComplete="off"
