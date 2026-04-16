@@ -26,6 +26,7 @@
   --table-header-bg: #fafafa;
   --link-color: #2563eb;
   --link-hover: #1d4ed8;
+  --active-line-bg: #f0f0f2;
 }
 
 [data-theme="dark"] {
@@ -47,6 +48,7 @@
   --table-header-bg: #18181b;
   --link-color: #60a5fa;
   --link-hover: #93c5fd;
+  --active-line-bg: #1e1e22;
 }
 
 * {
@@ -235,6 +237,16 @@ body {
     border-bottom: 1px solid var(--border-color);
     padding-bottom: 0.5rem;
   }
+}
+
+/* Code block copy button */
+.code-block-wrapper .copy-code-btn {
+  opacity: 0;
+  transition: opacity 150ms;
+}
+
+.code-block-wrapper:hover .copy-code-btn {
+  opacity: 1;
 }
 
 /* Resize handle */

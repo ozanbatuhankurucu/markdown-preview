@@ -1,11 +1,12 @@
 "use client";
 
-import { memo, RefObject, useMemo } from "react";
+import { memo, RefObject, useCallback, useMemo, useRef, useState } from "react";
 import ReactMarkdown, { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import rehypeRaw from "rehype-raw";
 import rehypeSlug from "rehype-slug";
+import { Check, Clipboard } from "lucide-react";
 
 interface MarkdownPreviewProps {
   markdown: string;
@@ -14,6 +15,38 @@ interface MarkdownPreviewProps {
 
 const remarkPlugins = [remarkGfm];
 const rehypePlugins = [rehypeRaw, rehypeSlug, rehypeHighlight];
+
+function CopyCodeButton() {
+  const [copied, setCopied] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(null);
+
+  const handleCopy = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      const pre = e.currentTarget.closest(".code-block-wrapper")?.querySelector("code");
+      if (!pre) return;
+      navigator.clipboard.writeText(pre.textContent || "");
+      setCopied(true);
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => setCopied(false), 2000);
+    },
+    []
+  );
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="copy-code-btn absolute top-2 right-2 flex items-center justify-center w-7 h-7 rounded-md transition-colors cursor-pointer"
+      style={{
+        background: "var(--bg-tertiary)",
+        color: copied ? "#22c55e" : "var(--fg-muted)",
+        border: "1px solid var(--border-color)",
+      }}
+      title={copied ? "Copied!" : "Copy code"}
+    >
+      {copied ? <Check size={13} /> : <Clipboard size={13} />}
+    </button>
+  );
+}
 
 export const MarkdownPreview = memo(function MarkdownPreview({
   markdown,
@@ -32,16 +65,19 @@ export const MarkdownPreview = memo(function MarkdownPreview({
         </a>
       ),
       pre: ({ children, ...props }) => (
-        <pre
-          className="overflow-x-auto rounded-md text-sm leading-relaxed"
-          style={{
-            background: "var(--code-bg)",
-            border: "1px solid var(--border-color)",
-          }}
-          {...props}
-        >
-          {children}
-        </pre>
+        <div className="code-block-wrapper relative">
+          <pre
+            className="overflow-x-auto rounded-md text-sm leading-relaxed"
+            style={{
+              background: "var(--code-bg)",
+              border: "1px solid var(--border-color)",
+            }}
+            {...props}
+          >
+            {children}
+          </pre>
+          <CopyCodeButton />
+        </div>
       ),
       img: ({ src, alt, ...props }) => (
         // eslint-disable-next-line @next/next/no-img-element

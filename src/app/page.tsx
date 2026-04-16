@@ -14,6 +14,7 @@ export default function Home() {
     defaultMarkdown
   );
   const [syncScroll, setSyncScroll] = useState(true);
+  const [focusedPanel, setFocusedPanel] = useState<"editor" | "preview" | null>(null);
   const editorRef = useRef<HTMLTextAreaElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
   const activePaneRef = useRef<"editor" | "preview" | null>(null);
@@ -72,6 +73,10 @@ export default function Home() {
       if (isMod && e.shiftKey && e.key === "C") {
         e.preventDefault();
         handleCopyHtml();
+      }
+
+      if (e.key === "Escape") {
+        setFocusedPanel(null);
       }
     };
 
@@ -150,6 +155,8 @@ export default function Home() {
         onChange={setMarkdown}
         editorRef={editorRef}
         previewRef={previewRef}
+        focusedPanel={focusedPanel}
+        onFocusedPanelChange={setFocusedPanel}
       />
       <StatusBar
         markdown={markdown}
