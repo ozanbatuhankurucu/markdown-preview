@@ -1,23 +1,103 @@
 "use client";
 
-import { RefObject } from "react";
-import ReactMarkdown from "react-markdown";
+import { memo, RefObject, useCallback, useMemo, useRef, useState } from "react";
+import ReactMarkdown, { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import rehypeRaw from "rehype-raw";
 import rehypeSlug from "rehype-slug";
+import { Check, Clipboard } from "lucide-react";
 
 interface MarkdownPreviewProps {
   markdown: string;
   previewRef: RefObject<HTMLDivElement | null>;
 }
 
-export function MarkdownPreview({ markdown, previewRef }: MarkdownPreviewProps) {
+const remarkPlugins = [remarkGfm];
+const rehypePlugins = [rehypeRaw, rehypeSlug, rehypeHighlight];
+
+function CopyCodeButton() {
+  const [copied, setCopied] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(null);
+
+  const handleCopy = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      const pre = e.currentTarget.closest(".code-block-wrapper")?.querySelector("code");
+      if (!pre) return;
+      navigator.clipboard.writeText(pre.textContent || "");
+      setCopied(true);
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => setCopied(false), 2000);
+    },
+    []
+  );
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="copy-code-btn absolute top-2 right-2 flex items-center justify-center w-7 h-7 rounded-md transition-colors cursor-pointer"
+      style={{
+        background: "var(--bg-tertiary)",
+        color: copied ? "#22c55e" : "var(--fg-muted)",
+        border: "1px solid var(--border-color)",
+      }}
+      title={copied ? "Copied!" : "Copy code"}
+    >
+      {copied ? <Check size={13} /> : <Clipboard size={13} />}
+    </button>
+  );
+}
+
+export const MarkdownPreview = memo(function MarkdownPreview({
+  markdown,
+  previewRef,
+}: MarkdownPreviewProps) {
+  const components = useMemo<Components>(
+    () => ({
+      a: ({ children, href, ...props }) => (
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          {...props}
+        >
+          {children}
+        </a>
+      ),
+      pre: ({ children, ...props }) => (
+        <div className="code-block-wrapper relative">
+          <pre
+            className="overflow-x-auto rounded-md text-sm leading-relaxed"
+            style={{
+              background: "var(--code-bg)",
+              border: "1px solid var(--border-color)",
+            }}
+            {...props}
+          >
+            {children}
+          </pre>
+          <CopyCodeButton />
+        </div>
+      ),
+      img: ({ src, alt, ...props }) => (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={src}
+          alt={alt || ""}
+          loading="lazy"
+          className="rounded-md"
+          {...props}
+        />
+      ),
+    }),
+    []
+  );
+
   return (
     <div
       ref={previewRef}
       className="flex-1 overflow-auto p-6 md:p-8 min-h-0"
-      style={{ background: "var(--preview-bg)" }}
+      style={{ background: "var(--preview-bg)", willChange: "scroll-position" }}
     >
       {markdown.trim() ? (
         <article
@@ -31,42 +111,9 @@ export function MarkdownPreview({ markdown, previewRef }: MarkdownPreviewProps) 
             prose-code:before:content-none prose-code:after:content-none"
         >
           <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            rehypePlugins={[rehypeRaw, rehypeSlug, rehypeHighlight]}
-            components={{
-              a: ({ children, href, ...props }) => (
-                <a
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  {...props}
-                >
-                  {children}
-                </a>
-              ),
-              pre: ({ children, ...props }) => (
-                <pre
-                  className="overflow-x-auto rounded-md p-4 text-sm leading-relaxed"
-                  style={{
-                    background: "var(--code-bg)",
-                    border: "1px solid var(--border-color)",
-                  }}
-                  {...props}
-                >
-                  {children}
-                </pre>
-              ),
-              img: ({ src, alt, ...props }) => (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={src}
-                  alt={alt || ""}
-                  loading="lazy"
-                  className="rounded-md"
-                  {...props}
-                />
-              ),
-            }}
+            remarkPlugins={remarkPlugins}
+            rehypePlugins={rehypePlugins}
+            components={components}
           >
             {markdown}
           </ReactMarkdown>
@@ -94,4 +141,4 @@ export function MarkdownPreview({ markdown, previewRef }: MarkdownPreviewProps) 
       )}
     </div>
   );
-}
+});

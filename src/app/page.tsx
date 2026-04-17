@@ -14,9 +14,10 @@ export default function Home() {
     defaultMarkdown
   );
   const [syncScroll, setSyncScroll] = useState(true);
+  const [focusedPanel, setFocusedPanel] = useState<"editor" | "preview" | null>(null);
   const editorRef = useRef<HTMLTextAreaElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
-  const scrollSourceRef = useRef<"editor" | "preview" | null>(null);
+  const activePaneRef = useRef<"editor" | "preview" | null>(null);
 
   const isEmpty = !markdown.trim();
 
@@ -73,6 +74,10 @@ export default function Home() {
         e.preventDefault();
         handleCopyHtml();
       }
+
+      if (e.key === "Escape") {
+        setFocusedPanel(null);
+      }
     };
 
     window.addEventListener("keydown", handleKeyDown);
@@ -84,44 +89,47 @@ export default function Home() {
     const preview = previewRef.current;
     if (!editor || !preview) return;
 
-    let ticking = false;
+    let rafId: number | null = null;
+
+    const onEditorEnter = () => { activePaneRef.current = "editor"; };
+    const onPreviewEnter = () => { activePaneRef.current = "preview"; };
 
     const handleEditorScroll = () => {
-      if (!syncScroll || scrollSourceRef.current === "preview") return;
-      scrollSourceRef.current = "editor";
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(() => {
-        const ratio =
-          editor.scrollTop / (editor.scrollHeight - editor.clientHeight || 1);
-        preview.scrollTop =
-          ratio * (preview.scrollHeight - preview.clientHeight);
-        ticking = false;
-        scrollSourceRef.current = null;
+      if (!syncScroll || activePaneRef.current !== "editor") return;
+      if (rafId !== null) return;
+      rafId = requestAnimationFrame(() => {
+        const maxEditor = editor.scrollHeight - editor.clientHeight;
+        const maxPreview = preview.scrollHeight - preview.clientHeight;
+        if (maxEditor > 0) {
+          preview.scrollTop = (editor.scrollTop / maxEditor) * maxPreview;
+        }
+        rafId = null;
       });
     };
 
     const handlePreviewScroll = () => {
-      if (!syncScroll || scrollSourceRef.current === "editor") return;
-      scrollSourceRef.current = "preview";
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(() => {
-        const ratio =
-          preview.scrollTop /
-          (preview.scrollHeight - preview.clientHeight || 1);
-        editor.scrollTop =
-          ratio * (editor.scrollHeight - editor.clientHeight);
-        ticking = false;
-        scrollSourceRef.current = null;
+      if (!syncScroll || activePaneRef.current !== "preview") return;
+      if (rafId !== null) return;
+      rafId = requestAnimationFrame(() => {
+        const maxPreview = preview.scrollHeight - preview.clientHeight;
+        const maxEditor = editor.scrollHeight - editor.clientHeight;
+        if (maxPreview > 0) {
+          editor.scrollTop = (preview.scrollTop / maxPreview) * maxEditor;
+        }
+        rafId = null;
       });
     };
 
-    editor.addEventListener("scroll", handleEditorScroll);
-    preview.addEventListener("scroll", handlePreviewScroll);
+    editor.addEventListener("pointerenter", onEditorEnter);
+    preview.addEventListener("pointerenter", onPreviewEnter);
+    editor.addEventListener("scroll", handleEditorScroll, { passive: true });
+    preview.addEventListener("scroll", handlePreviewScroll, { passive: true });
     return () => {
+      editor.removeEventListener("pointerenter", onEditorEnter);
+      preview.removeEventListener("pointerenter", onPreviewEnter);
       editor.removeEventListener("scroll", handleEditorScroll);
       preview.removeEventListener("scroll", handlePreviewScroll);
+      if (rafId !== null) cancelAnimationFrame(rafId);
     };
   }, [syncScroll, isHydrated]);
 
@@ -147,6 +155,8 @@ export default function Home() {
         onChange={setMarkdown}
         editorRef={editorRef}
         previewRef={previewRef}
+        focusedPanel={focusedPanel}
+        onFocusedPanelChange={setFocusedPanel}
       />
       <StatusBar
         markdown={markdown}
