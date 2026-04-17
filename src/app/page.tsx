@@ -131,7 +131,7 @@ export default function Home() {
       preview.removeEventListener("scroll", handlePreviewScroll);
       if (rafId !== null) cancelAnimationFrame(rafId);
     };
-  }, [syncScroll, isHydrated]);
+  }, [syncScroll, isHydrated, focusedPanel]);
 
   if (!isHydrated) {
     return (
