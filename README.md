@@ -8,13 +8,18 @@ A live markdown editor and previewer built with Next.js. Paste or type markdown 
 - **GitHub Flavored Markdown** — Tables, task lists, strikethrough, footnotes, and autolinks
 - **Syntax highlighting** — Code blocks with language detection via highlight.js
 - **Resizable panels** — Drag the divider to resize the editor and preview panes
+- **Fullscreen mode** — Expand either panel to full width; press Escape to restore the split layout
 - **Dark and light mode** — System, light, and dark theme options
 - **Persistent content** — Your markdown is saved to localStorage automatically
-- **Scroll sync** — Editor and preview scroll positions stay in sync
+- **Scroll sync** — Editor and preview scroll positions stay in sync using pointer-tracking
+- **Active line highlighting** — Current line is highlighted in both the editor and the gutter
+- **Auto-pairing** — Brackets, backticks, quotes, and markdown characters auto-close; selections are wrapped automatically
+- **Copy button on code blocks** — Hover over a code block in the preview to reveal a one-click copy button
+- **Drag-and-drop import** — Drop a `.md`, `.markdown`, or `.txt` file onto the editor to load it
+- **Table of contents** — Click the list icon in the preview header to navigate headings
 - **Copy as HTML** — Copy the rendered HTML to clipboard
 - **Download** — Export your markdown as a `.md` file
-- **Keyboard shortcuts** — `Ctrl+S` to download, `Ctrl+Shift+C` to copy HTML
-- **SEO optimized** — Full metadata, Open Graph, Twitter cards, and JSON-LD structured data
+- **Keyboard shortcuts** — `Ctrl+S` to download, `Ctrl+Shift+C` to copy HTML, `Escape` to exit fullscreen
 
 ## Tech Stack
 
@@ -24,6 +29,8 @@ A live markdown editor and previewer built with Next.js. Paste or type markdown 
 - [rehype-highlight](https://github.com/rehypejs/rehype-highlight) + [rehype-raw](https://github.com/rehypejs/rehype-raw) + [rehype-slug](https://github.com/rehypejs/rehype-slug)
 - [react-resizable-panels](https://github.com/bvaughn/react-resizable-panels)
 - [next-themes](https://github.com/pacocoursey/next-themes)
+- [lucide-react](https://lucide.dev/) (icons)
+- [sonner](https://sonner.emilkowal.dev/) (toast notifications)
 
 ## Getting Started
 
@@ -48,20 +55,21 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ```
 src/
   app/
-    layout.tsx          Root layout, ThemeProvider, SEO metadata
-    page.tsx            Main page, state management, keyboard shortcuts
-    globals.css         Tailwind config, theme variables, syntax theme
+    layout.tsx            Root layout, ThemeProvider, SEO metadata
+    page.tsx              Main page, state management, scroll sync, keyboard shortcuts
+    globals.css           Tailwind config, theme variables, syntax highlighting, scrollbar styles
   components/
-    Providers.tsx       next-themes ThemeProvider wrapper
-    Header.tsx          App header, action buttons, GitHub link
-    ThemeToggle.tsx     Light / Dark / System mode switcher
-    EditorLayout.tsx    Resizable split-pane layout
-    MarkdownEditor.tsx  Textarea with line numbers
-    MarkdownPreview.tsx react-markdown renderer with plugins
-    StatusBar.tsx       Word, character, and line counts
+    Providers.tsx         next-themes ThemeProvider wrapper
+    Header.tsx            App header, action buttons, GitHub link
+    ThemeToggle.tsx       Light / Dark / System mode switcher
+    EditorLayout.tsx      Resizable split-pane layout with fullscreen mode
+    MarkdownEditor.tsx    Textarea with line numbers, active line highlighting, auto-pairing, drag-and-drop
+    MarkdownPreview.tsx   react-markdown renderer with plugins and copy-code buttons
+    TableOfContents.tsx   Heading extraction and popover navigation for the preview
+    StatusBar.tsx         Word, character, and line counts; sync scroll toggle
   lib/
-    default-markdown.ts Sample markdown content
-    useLocalStorage.ts  localStorage hook via useSyncExternalStore
+    default-markdown.ts   Sample markdown content
+    useLocalStorage.ts    localStorage hook via useSyncExternalStore
 ```
 
 ## License
