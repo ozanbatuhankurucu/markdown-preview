@@ -10,6 +10,7 @@ import { RefObject } from "react";
 interface EditorLayoutProps {
   markdown: string;
   onChange: (value: string) => void;
+  onImportFile: (content: string, fileName: string) => void;
   editorRef: RefObject<HTMLTextAreaElement | null>;
   previewRef: RefObject<HTMLDivElement | null>;
   focusedPanel: "editor" | "preview" | null;
@@ -66,6 +67,7 @@ function PanelHeader({
 export function EditorLayout({
   markdown,
   onChange,
+  onImportFile,
   editorRef,
   previewRef,
   focusedPanel,
@@ -81,7 +83,12 @@ export function EditorLayout({
           focusedPanel={focusedPanel}
           onFocusedPanelChange={onFocusedPanelChange}
         />
-        <MarkdownEditor value={markdown} onChange={onChange} editorRef={editorRef} />
+        <MarkdownEditor
+          value={markdown}
+          onChange={onChange}
+          onImportFile={onImportFile}
+          editorRef={editorRef}
+        />
       </div>
     );
   }
@@ -114,7 +121,12 @@ export function EditorLayout({
             focusedPanel={focusedPanel}
             onFocusedPanelChange={onFocusedPanelChange}
           />
-          <MarkdownEditor value={markdown} onChange={onChange} editorRef={editorRef} />
+          <MarkdownEditor
+            value={markdown}
+            onChange={onChange}
+            onImportFile={onImportFile}
+            editorRef={editorRef}
+          />
         </div>
       </Panel>
 
