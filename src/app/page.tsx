@@ -5,7 +5,7 @@ import { Header } from "@/components/Header";
 import { EditorLayout } from "@/components/EditorLayout";
 import { StatusBar } from "@/components/StatusBar";
 import { DocumentDrawer } from "@/components/DocumentDrawer";
-import { useDocumentLibrary } from "@/lib/useDocumentLibrary";
+import { getDisplayTitle, useDocumentLibrary } from "@/lib/useDocumentLibrary";
 import { toast } from "sonner";
 
 export default function Home() {
@@ -34,6 +34,7 @@ export default function Home() {
   const markdown = activeDocument?.content ?? "";
   const isReady = isHydrated && activeDocument !== null;
   const isEmpty = !markdown.trim();
+  const documentTitle = activeDocument ? getDisplayTitle(activeDocument) : "";
 
   const handleCopyHtml = useCallback(async () => {
     if (!previewRef.current) return;
@@ -129,6 +130,11 @@ export default function Home() {
         toggleDrawer();
       }
 
+      if (isMod && e.altKey && (e.key === "n" || e.key === "N" || e.code === "KeyN")) {
+        e.preventDefault();
+        handleCreateDocument();
+      }
+
       if (e.key === "Escape" && !isDrawerOpen) {
         setFocusedPanel(null);
       }
@@ -136,7 +142,7 @@ export default function Home() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleDownload, handleCopyHtml, toggleDrawer, isDrawerOpen]);
+  }, [handleDownload, handleCopyHtml, toggleDrawer, handleCreateDocument, isDrawerOpen]);
 
   useEffect(() => {
     const editor = editorRef.current;
@@ -202,8 +208,10 @@ export default function Home() {
         onCopyHtml={handleCopyHtml}
         onDownload={handleDownload}
         onClear={handleClear}
+        onCreateDocument={handleCreateDocument}
         onToggleLibrary={toggleDrawer}
         isDownloadDisabled={isEmpty}
+        documentTitle={documentTitle}
       />
       <EditorLayout
         markdown={markdown}
