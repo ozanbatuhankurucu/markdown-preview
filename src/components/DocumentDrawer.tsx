@@ -19,6 +19,7 @@ import {
   relativeTime,
   type MarkdownDocument,
 } from "@/lib/useDocumentLibrary";
+import { Tooltip } from "./Tooltip";
 
 interface DocumentDrawerProps {
   isOpen: boolean;
@@ -430,20 +431,22 @@ function RowActionButton({
   danger?: boolean;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={title}
-      className="flex items-center justify-center w-6 h-6 rounded transition-colors cursor-pointer"
-      style={{ color: danger ? "#ef4444" : "var(--fg-secondary)" }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.background = "var(--bg-secondary)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.background = "transparent";
-      }}
-    >
-      <Icon size={11} />
-    </button>
+    <Tooltip label={title} side="bottom">
+      <button
+        type="button"
+        onClick={onClick}
+        aria-label={title}
+        className="flex items-center justify-center w-6 h-6 rounded transition-colors cursor-pointer"
+        style={{ color: danger ? "#ef4444" : "var(--fg-secondary)" }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = "var(--bg-secondary)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = "transparent";
+        }}
+      >
+        <Icon size={11} />
+      </button>
+    </Tooltip>
   );
 }
