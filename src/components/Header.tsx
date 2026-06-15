@@ -1,12 +1,13 @@
 "use client";
 
-import { Copy, Download, Trash2, Github } from "lucide-react";
+import { Copy, Download, Trash2, Github, PanelLeft } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 
 interface HeaderProps {
   onCopyHtml: () => void;
   onDownload: () => void;
   onClear: () => void;
+  onToggleLibrary: () => void;
   isDownloadDisabled?: boolean;
 }
 
@@ -46,7 +47,7 @@ function ActionButton({
   );
 }
 
-export function Header({ onCopyHtml, onDownload, onClear, isDownloadDisabled }: HeaderProps) {
+export function Header({ onCopyHtml, onDownload, onClear, onToggleLibrary, isDownloadDisabled }: HeaderProps) {
   return (
     <header
       className="flex items-center justify-between px-4 py-2 border-b shrink-0"
@@ -56,6 +57,20 @@ export function Header({ onCopyHtml, onDownload, onClear, isDownloadDisabled }: 
       }}
     >
       <div className="flex items-center gap-2">
+        <button
+          onClick={onToggleLibrary}
+          title="Documents (Ctrl+B)"
+          className="flex items-center justify-center w-8 h-8 rounded-md transition-colors cursor-pointer"
+          style={{ color: "var(--fg-secondary)" }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "var(--bg-tertiary)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "transparent";
+          }}
+        >
+          <PanelLeft size={16} />
+        </button>
         <svg
           width="20"
           height="20"

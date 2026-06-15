@@ -13,6 +13,7 @@ import { toast } from "sonner";
 interface MarkdownEditorProps {
   value: string;
   onChange: (value: string) => void;
+  onImportFile: (content: string, fileName: string) => void;
   editorRef: RefObject<HTMLTextAreaElement | null>;
 }
 
@@ -37,6 +38,7 @@ function getActiveLine(textarea: HTMLTextAreaElement): number {
 export function MarkdownEditor({
   value,
   onChange,
+  onImportFile,
   editorRef,
 }: MarkdownEditorProps) {
   const lineNumbersRef = useRef<HTMLDivElement>(null);
@@ -192,13 +194,12 @@ export function MarkdownEditor({
       reader.onload = (event) => {
         const content = event.target?.result;
         if (typeof content === "string") {
-          onChange(content);
-          toast.success(`Imported ${file.name}`);
+          onImportFile(content, file.name);
         }
       };
       reader.readAsText(file);
     },
-    [onChange]
+    [onImportFile]
   );
 
   return (

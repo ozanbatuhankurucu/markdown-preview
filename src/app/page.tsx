@@ -4,21 +4,35 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Header } from "@/components/Header";
 import { EditorLayout } from "@/components/EditorLayout";
 import { StatusBar } from "@/components/StatusBar";
-import { useLocalStorage } from "@/lib/useLocalStorage";
-import { defaultMarkdown } from "@/lib/default-markdown";
+import { DocumentDrawer } from "@/components/DocumentDrawer";
+import { useDocumentLibrary } from "@/lib/useDocumentLibrary";
 import { toast } from "sonner";
 
 export default function Home() {
-  const [markdown, setMarkdown, isHydrated] = useLocalStorage(
-    "markdown-content",
-    defaultMarkdown
-  );
+  const {
+    documents,
+    activeDocument,
+    activeId,
+    isHydrated,
+    createDocument,
+    openDocument,
+    updateActiveContent,
+    clearActiveContent,
+    renameDocument,
+    deleteDocument,
+    duplicateDocument,
+    togglePin,
+  } = useDocumentLibrary();
+
   const [syncScroll, setSyncScroll] = useState(true);
   const [focusedPanel, setFocusedPanel] = useState<"editor" | "preview" | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const editorRef = useRef<HTMLTextAreaElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
   const activePaneRef = useRef<"editor" | "preview" | null>(null);
 
+  const markdown = activeDocument?.content ?? "";
+  const isReady = isHydrated && activeDocument !== null;
   const isEmpty = !markdown.trim();
 
   const handleCopyHtml = useCallback(async () => {
@@ -56,10 +70,45 @@ export default function Home() {
   }, [markdown]);
 
   const handleClear = useCallback(() => {
-    setMarkdown("");
+    clearActiveContent();
     editorRef.current?.focus();
-    toast.success("Editor cleared");
-  }, [setMarkdown]);
+    toast.success("Document cleared");
+  }, [clearActiveContent]);
+
+  const handleImportFile = useCallback(
+    (content: string, fileName: string) => {
+      const title = fileName.replace(/\.(md|markdown|txt)$/i, "").trim() || null;
+      createDocument(content, title);
+      toast.success(`Imported ${fileName} as new document`);
+    },
+    [createDocument],
+  );
+
+  const handleCreateDocument = useCallback(() => {
+    createDocument("");
+    editorRef.current?.focus();
+    toast.success("New document created");
+  }, [createDocument]);
+
+  const toggleDrawer = useCallback(() => {
+    setIsDrawerOpen((open) => !open);
+  }, []);
+
+  const handleDuplicateDocument = useCallback(
+    (id: string) => {
+      duplicateDocument(id);
+      toast.success("Document duplicated");
+    },
+    [duplicateDocument],
+  );
+
+  const handleDeleteDocument = useCallback(
+    (id: string) => {
+      deleteDocument(id);
+      toast.success("Document deleted");
+    },
+    [deleteDocument],
+  );
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -75,14 +124,19 @@ export default function Home() {
         handleCopyHtml();
       }
 
-      if (e.key === "Escape") {
+      if (isMod && !e.shiftKey && (e.key === "b" || e.key === "B")) {
+        e.preventDefault();
+        toggleDrawer();
+      }
+
+      if (e.key === "Escape" && !isDrawerOpen) {
         setFocusedPanel(null);
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleDownload, handleCopyHtml]);
+  }, [handleDownload, handleCopyHtml, toggleDrawer, isDrawerOpen]);
 
   useEffect(() => {
     const editor = editorRef.current;
@@ -131,9 +185,9 @@ export default function Home() {
       preview.removeEventListener("scroll", handlePreviewScroll);
       if (rafId !== null) cancelAnimationFrame(rafId);
     };
-  }, [syncScroll, isHydrated, focusedPanel]);
+  }, [syncScroll, isReady, focusedPanel]);
 
-  if (!isHydrated) {
+  if (!isReady) {
     return (
       <div
         className="flex flex-col h-dvh"
@@ -148,11 +202,13 @@ export default function Home() {
         onCopyHtml={handleCopyHtml}
         onDownload={handleDownload}
         onClear={handleClear}
+        onToggleLibrary={toggleDrawer}
         isDownloadDisabled={isEmpty}
       />
       <EditorLayout
         markdown={markdown}
-        onChange={setMarkdown}
+        onChange={updateActiveContent}
+        onImportFile={handleImportFile}
         editorRef={editorRef}
         previewRef={previewRef}
         focusedPanel={focusedPanel}
@@ -162,6 +218,18 @@ export default function Home() {
         markdown={markdown}
         syncScroll={syncScroll}
         onSyncScrollChange={setSyncScroll}
+      />
+      <DocumentDrawer
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        documents={documents}
+        activeId={activeId}
+        onCreateDocument={handleCreateDocument}
+        onOpenDocument={openDocument}
+        onRenameDocument={renameDocument}
+        onDuplicateDocument={handleDuplicateDocument}
+        onDeleteDocument={handleDeleteDocument}
+        onTogglePin={togglePin}
       />
     </div>
   );

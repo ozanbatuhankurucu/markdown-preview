@@ -10,16 +10,17 @@ A live markdown editor and previewer built with Next.js. Paste or type markdown 
 - **Resizable panels** — Drag the divider to resize the editor and preview panes
 - **Fullscreen mode** — Expand either panel to full width; press Escape to restore the split layout
 - **Dark and light mode** — System, light, and dark theme options
-- **Persistent content** — Your markdown is saved to localStorage automatically
+- **Document library** — Keep up to 100 markdown documents in a left slide-in drawer; search, rename, pin, duplicate, and delete from one place
+- **Auto-save per document** — Every edit is written to localStorage against the active document so nothing is lost when you switch
 - **Scroll sync** — Editor and preview scroll positions stay in sync using pointer-tracking
 - **Active line highlighting** — Current line is highlighted in both the editor and the gutter
 - **Auto-pairing** — Brackets, backticks, quotes, and markdown characters auto-close; selections are wrapped automatically
 - **Copy button on code blocks** — Hover over a code block in the preview to reveal a one-click copy button
-- **Drag-and-drop import** — Drop a `.md`, `.markdown`, or `.txt` file onto the editor to load it
+- **Drag-and-drop import** — Drop a `.md`, `.markdown`, or `.txt` file onto the editor to import it as a new document
 - **Table of contents** — Click the list icon in the preview header to navigate headings
 - **Copy as HTML** — Copy the rendered HTML to clipboard
 - **Download** — Export your markdown as a `.md` file
-- **Keyboard shortcuts** — `Ctrl+S` to download, `Ctrl+Shift+C` to copy HTML, `Escape` to exit fullscreen
+- **Keyboard shortcuts** — `Ctrl+B` to toggle the document library, `Ctrl+S` to download, `Ctrl+Shift+C` to copy HTML, `Escape` to exit fullscreen
 
 ## Tech Stack
 
@@ -60,16 +61,18 @@ src/
     globals.css           Tailwind config, theme variables, syntax highlighting, scrollbar styles
   components/
     Providers.tsx         next-themes ThemeProvider wrapper
-    Header.tsx            App header, action buttons, GitHub link
+    Header.tsx            App header, library toggle, action buttons, GitHub link
     ThemeToggle.tsx       Light / Dark / System mode switcher
     EditorLayout.tsx      Resizable split-pane layout with fullscreen mode
     MarkdownEditor.tsx    Textarea with line numbers, active line highlighting, auto-pairing, drag-and-drop
     MarkdownPreview.tsx   react-markdown renderer with plugins and copy-code buttons
     TableOfContents.tsx   Heading extraction and popover navigation for the preview
+    DocumentDrawer.tsx    Left slide-in document library with search, pin, rename, duplicate, delete
     StatusBar.tsx         Word, character, and line counts; sync scroll toggle
   lib/
     default-markdown.ts   Sample markdown content
     useLocalStorage.ts    localStorage hook via useSyncExternalStore
+    useDocumentLibrary.ts Multi-document store with 100-doc cap, pinning, and legacy migration
 ```
 
 ## License
