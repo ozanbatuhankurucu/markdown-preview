@@ -1,6 +1,15 @@
 "use client";
 
-import { Copy, Download, Trash2, Github, PanelLeft, Plus } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import {
+  Copy,
+  Download,
+  Trash2,
+  Github,
+  PanelLeft,
+  Pencil,
+  Plus,
+} from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 
 interface HeaderProps {
@@ -11,6 +20,103 @@ interface HeaderProps {
   onToggleLibrary: () => void;
   isDownloadDisabled?: boolean;
   documentTitle: string;
+  activeDocumentId: string;
+  onRenameDocument: (id: string, title: string) => void;
+}
+
+function EditableDocumentTitle({
+  title,
+  documentId,
+  onRename,
+}: {
+  title: string;
+  documentId: string;
+  onRename: (id: string, title: string) => void;
+}) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState(title);
+  const [prevDocumentId, setPrevDocumentId] = useState(documentId);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  if (prevDocumentId !== documentId) {
+    setPrevDocumentId(documentId);
+    setIsEditing(false);
+  }
+
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditing]);
+
+  const startEditing = () => {
+    setEditValue(title);
+    setIsEditing(true);
+  };
+
+  const commit = () => {
+    onRename(documentId, editValue);
+    setIsEditing(false);
+  };
+
+  if (isEditing) {
+    return (
+      <input
+        ref={inputRef}
+        type="text"
+        value={editValue}
+        onChange={(e) => setEditValue(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            commit();
+          } else if (e.key === "Escape") {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsEditing(false);
+          }
+        }}
+        aria-label="Rename document"
+        className="text-sm font-semibold rounded px-1.5 py-0.5 outline-none border min-w-0 w-full max-w-xs"
+        style={{
+          background: "var(--bg-primary)",
+          color: "var(--fg-primary)",
+          borderColor: "var(--border-color)",
+        }}
+      />
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={startEditing}
+      title={`${title} — click to rename`}
+      aria-label={`Rename document: ${title}`}
+      className="group flex items-center gap-1.5 min-w-0 rounded px-1.5 py-0.5 -mx-1 cursor-pointer transition-colors"
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = "var(--bg-tertiary)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = "transparent";
+      }}
+    >
+      <span
+        className="text-sm font-semibold truncate"
+        style={{ color: "var(--fg-primary)" }}
+      >
+        {title}
+      </span>
+      <Pencil
+        size={11}
+        className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+        style={{ color: "var(--fg-muted)" }}
+        aria-hidden="true"
+      />
+    </button>
+  );
 }
 
 function PrimaryActionButton({
@@ -82,7 +188,7 @@ function ActionButton({
   );
 }
 
-export function Header({ onCopyHtml, onDownload, onClear, onCreateDocument, onToggleLibrary, isDownloadDisabled, documentTitle }: HeaderProps) {
+export function Header({ onCopyHtml, onDownload, onClear, onCreateDocument, onToggleLibrary, isDownloadDisabled, documentTitle, activeDocumentId, onRenameDocument }: HeaderProps) {
   const isMac = typeof navigator !== "undefined" && /Mac|iPod|iPhone|iPad/.test(navigator.platform);
   const newShortcut = isMac ? "⌘⌥N" : "Ctrl+Alt+N";
   return (
@@ -137,13 +243,11 @@ export function Header({ onCopyHtml, onDownload, onClear, onCreateDocument, onTo
         >
           /
         </span>
-        <h1
-          className="text-sm font-semibold truncate"
-          style={{ color: "var(--fg-primary)" }}
+        <EditableDocumentTitle
           title={documentTitle}
-        >
-          {documentTitle}
-        </h1>
+          documentId={activeDocumentId}
+          onRename={onRenameDocument}
+        />
       </div>
 
       <div className="flex items-center gap-1">

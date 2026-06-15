@@ -212,6 +212,8 @@ export default function Home() {
         onToggleLibrary={toggleDrawer}
         isDownloadDisabled={isEmpty}
         documentTitle={documentTitle}
+        activeDocumentId={activeDocument.id}
+        onRenameDocument={renameDocument}
       />
       <EditorLayout
         markdown={markdown}
