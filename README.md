@@ -11,6 +11,8 @@ A live markdown editor and previewer built with Next.js. Paste or type markdown 
 - **Fullscreen mode** — Expand either panel to full width; press Escape to restore the split layout
 - **Dark and light mode** — System, light, and dark theme options
 - **Document library** — Keep up to 100 markdown documents in a left slide-in drawer; search, rename, pin, duplicate, and delete from one place
+- **Active document in the header** — A breadcrumb-style header shows the active document's title; click it (or the pencil affordance) to rename inline, press `Enter` to commit or `Escape` to cancel
+- **One-click new document** — A primary `+ New` button in the header (and a keyboard shortcut) creates a fresh document without losing the current one
 - **Auto-save per document** — Every edit is written to localStorage against the active document so nothing is lost when you switch
 - **Scroll sync** — Editor and preview scroll positions stay in sync using pointer-tracking
 - **Active line highlighting** — Current line is highlighted in both the editor and the gutter
@@ -20,7 +22,7 @@ A live markdown editor and previewer built with Next.js. Paste or type markdown 
 - **Table of contents** — Click the list icon in the preview header to navigate headings
 - **Copy as HTML** — Copy the rendered HTML to clipboard
 - **Download** — Export your markdown as a `.md` file
-- **Keyboard shortcuts** — `Ctrl+B` to toggle the document library, `Ctrl+S` to download, `Ctrl+Shift+C` to copy HTML, `Escape` to exit fullscreen
+- **Keyboard shortcuts** — `Ctrl+B` to toggle the document library, `Ctrl/Cmd+Alt+N` to create a new document, `Ctrl+S` to download, `Ctrl+Shift+C` to copy HTML, `Escape` to exit fullscreen
 
 ## Tech Stack
 
@@ -61,7 +63,7 @@ src/
     globals.css           Tailwind config, theme variables, syntax highlighting, scrollbar styles
   components/
     Providers.tsx         next-themes ThemeProvider wrapper
-    Header.tsx            App header, library toggle, action buttons, GitHub link
+    Header.tsx            App header, library toggle, active document title with inline rename, `+ New` button, action buttons, GitHub link
     ThemeToggle.tsx       Light / Dark / System mode switcher
     EditorLayout.tsx      Resizable split-pane layout with fullscreen mode
     MarkdownEditor.tsx    Textarea with line numbers, active line highlighting, auto-pairing, drag-and-drop
