@@ -15,6 +15,7 @@ interface EditorLayoutProps {
   previewRef: RefObject<HTMLDivElement | null>;
   focusedPanel: "editor" | "preview" | null;
   onFocusedPanelChange: (panel: "editor" | "preview" | null) => void;
+  onPreviewNavigate: () => void;
 }
 
 function PanelHeader({
@@ -72,6 +73,7 @@ export function EditorLayout({
   previewRef,
   focusedPanel,
   onFocusedPanelChange,
+  onPreviewNavigate,
 }: EditorLayoutProps) {
   if (focusedPanel === "editor") {
     return (
@@ -103,7 +105,7 @@ export function EditorLayout({
           focusedPanel={focusedPanel}
           onFocusedPanelChange={onFocusedPanelChange}
         >
-          <TableOfContents markdown={markdown} previewRef={previewRef} />
+          <TableOfContents previewRef={previewRef} onNavigate={onPreviewNavigate} />
         </PanelHeader>
         <MarkdownPreview markdown={markdown} previewRef={previewRef} />
       </div>
@@ -149,7 +151,7 @@ export function EditorLayout({
             focusedPanel={focusedPanel}
             onFocusedPanelChange={onFocusedPanelChange}
           >
-            <TableOfContents markdown={markdown} previewRef={previewRef} />
+            <TableOfContents previewRef={previewRef} onNavigate={onPreviewNavigate} />
           </PanelHeader>
           <MarkdownPreview markdown={markdown} previewRef={previewRef} />
         </div>

@@ -30,6 +30,7 @@ export default function Home() {
   const editorRef = useRef<HTMLTextAreaElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
   const activePaneRef = useRef<"editor" | "preview" | null>(null);
+  const syncScrollFrameRef = useRef<number | null>(null);
 
   const markdown = activeDocument?.content ?? "";
   const isReady = isHydrated && activeDocument !== null;
@@ -95,6 +96,14 @@ export default function Home() {
     setIsDrawerOpen((open) => !open);
   }, []);
 
+  const handlePreviewNavigate = useCallback(() => {
+    if (syncScrollFrameRef.current !== null) {
+      cancelAnimationFrame(syncScrollFrameRef.current);
+      syncScrollFrameRef.current = null;
+    }
+    activePaneRef.current = "preview";
+  }, []);
+
   const handleDuplicateDocument = useCallback(
     (id: string) => {
       duplicateDocument(id);
@@ -149,34 +158,42 @@ export default function Home() {
     const preview = previewRef.current;
     if (!editor || !preview) return;
 
-    let rafId: number | null = null;
-
     const onEditorEnter = () => { activePaneRef.current = "editor"; };
     const onPreviewEnter = () => { activePaneRef.current = "preview"; };
 
     const handleEditorScroll = () => {
       if (!syncScroll || activePaneRef.current !== "editor") return;
-      if (rafId !== null) return;
-      rafId = requestAnimationFrame(() => {
+      if (syncScrollFrameRef.current !== null) return;
+      syncScrollFrameRef.current = requestAnimationFrame(() => {
+        if (activePaneRef.current !== "editor") {
+          syncScrollFrameRef.current = null;
+          return;
+        }
+
         const maxEditor = editor.scrollHeight - editor.clientHeight;
         const maxPreview = preview.scrollHeight - preview.clientHeight;
         if (maxEditor > 0) {
           preview.scrollTop = (editor.scrollTop / maxEditor) * maxPreview;
         }
-        rafId = null;
+        syncScrollFrameRef.current = null;
       });
     };
 
     const handlePreviewScroll = () => {
       if (!syncScroll || activePaneRef.current !== "preview") return;
-      if (rafId !== null) return;
-      rafId = requestAnimationFrame(() => {
+      if (syncScrollFrameRef.current !== null) return;
+      syncScrollFrameRef.current = requestAnimationFrame(() => {
+        if (activePaneRef.current !== "preview") {
+          syncScrollFrameRef.current = null;
+          return;
+        }
+
         const maxPreview = preview.scrollHeight - preview.clientHeight;
         const maxEditor = editor.scrollHeight - editor.clientHeight;
         if (maxPreview > 0) {
           editor.scrollTop = (preview.scrollTop / maxPreview) * maxEditor;
         }
-        rafId = null;
+        syncScrollFrameRef.current = null;
       });
     };
 
@@ -189,7 +206,10 @@ export default function Home() {
       preview.removeEventListener("pointerenter", onPreviewEnter);
       editor.removeEventListener("scroll", handleEditorScroll);
       preview.removeEventListener("scroll", handlePreviewScroll);
-      if (rafId !== null) cancelAnimationFrame(rafId);
+      if (syncScrollFrameRef.current !== null) {
+        cancelAnimationFrame(syncScrollFrameRef.current);
+        syncScrollFrameRef.current = null;
+      }
     };
   }, [syncScroll, isReady, focusedPanel]);
 
@@ -223,6 +243,7 @@ export default function Home() {
         previewRef={previewRef}
         focusedPanel={focusedPanel}
         onFocusedPanelChange={setFocusedPanel}
+        onPreviewNavigate={handlePreviewNavigate}
       />
       <StatusBar
         markdown={markdown}

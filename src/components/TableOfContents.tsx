@@ -1,58 +1,91 @@
 "use client";
 
-import { RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { RefObject, useCallback, useEffect, useRef, useState } from "react";
 import { List, X } from "lucide-react";
 
 interface Heading {
   level: number;
   text: string;
-  slug: string;
+  id: string;
 }
 
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .trim();
+function getRenderedHeadings(container: HTMLDivElement): HTMLElement[] {
+  return Array.from(
+    container.querySelectorAll<HTMLElement>(
+      "article h1, article h2, article h3, article h4, article h5, article h6",
+    ),
+  );
 }
 
 interface TableOfContentsProps {
-  markdown: string;
   previewRef: RefObject<HTMLDivElement | null>;
+  onNavigate: () => void;
 }
 
-export function TableOfContents({ markdown, previewRef }: TableOfContentsProps) {
+export function TableOfContents({ previewRef, onNavigate }: TableOfContentsProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [headings, setHeadings] = useState<Heading[]>([]);
   const popoverRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
-  const headings = useMemo<Heading[]>(() => {
-    const matches: Heading[] = [];
-    const regex = /^(#{1,6})\s+(.+)$/gm;
-    let match;
-    while ((match = regex.exec(markdown)) !== null) {
-      matches.push({
-        level: match[1].length,
-        text: match[2].replace(/[*_`~\[\]]/g, ""),
-        slug: slugify(match[2].replace(/[*_`~\[\]]/g, "")),
+  useEffect(() => {
+    const container = previewRef.current;
+    if (!container) return;
+
+    const updateHeadings = () => {
+      const nextHeadings = getRenderedHeadings(container).map((heading) => ({
+        level: Number(heading.tagName.slice(1)),
+        text: heading.textContent?.trim() || "",
+        id: heading.id,
+      }));
+
+      setHeadings((currentHeadings) => {
+        const isUnchanged =
+          currentHeadings.length === nextHeadings.length &&
+          currentHeadings.every(
+            (heading, index) =>
+              heading.id === nextHeadings[index].id &&
+              heading.level === nextHeadings[index].level &&
+              heading.text === nextHeadings[index].text,
+          );
+
+        return isUnchanged ? currentHeadings : nextHeadings;
       });
-    }
-    return matches;
-  }, [markdown]);
+    };
+
+    updateHeadings();
+
+    const observer = new MutationObserver(updateHeadings);
+    observer.observe(container, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+
+    return () => observer.disconnect();
+  }, [previewRef]);
 
   const handleClick = useCallback(
-    (slug: string) => {
+    (headingIndex: number) => {
       const container = previewRef.current;
       if (!container) return;
-      const el = container.querySelector(`#${CSS.escape(slug)}`);
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "start" });
+
+      const target = getRenderedHeadings(container)[headingIndex];
+      if (target) {
+        onNavigate();
+
+        const targetTop =
+          container.scrollTop +
+          target.getBoundingClientRect().top -
+          container.getBoundingClientRect().top;
+        const maxScrollTop = container.scrollHeight - container.clientHeight;
+
+        container.scrollTop = Math.max(0, Math.min(targetTop, maxScrollTop));
       }
+
       setIsOpen(false);
     },
-    [previewRef]
+    [onNavigate, previewRef],
   );
 
   useEffect(() => {
@@ -120,8 +153,8 @@ export function TableOfContents({ markdown, previewRef }: TableOfContentsProps) 
           </div>
           {headings.map((heading, i) => (
             <button
-              key={`${heading.slug}-${i}`}
-              onClick={() => handleClick(heading.slug)}
+              key={`${heading.id}-${i}`}
+              onClick={() => handleClick(i)}
               className="block w-full text-left px-3 py-1 transition-colors cursor-pointer truncate"
               style={{
                 paddingLeft: `${0.75 + (heading.level - minLevel) * 0.75}rem`,
