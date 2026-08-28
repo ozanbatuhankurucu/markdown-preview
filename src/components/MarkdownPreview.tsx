@@ -8,13 +8,73 @@ import rehypeRaw from "rehype-raw";
 import rehypeSlug from "rehype-slug";
 import { Check, Clipboard } from "lucide-react";
 
+interface HastNode {
+  type: string;
+  tagName?: string;
+  properties?: Record<string, unknown>;
+  children?: HastNode[];
+  position?: {
+    start: { line: number };
+    end: { line: number };
+  };
+}
+
 interface MarkdownPreviewProps {
   markdown: string;
   previewRef: RefObject<HTMLDivElement | null>;
 }
 
+const sourceAnchorTags = new Set([
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+  "p",
+  "pre",
+  "li",
+  "blockquote",
+  "table",
+  "tr",
+  "hr",
+  "div",
+  "details",
+  "summary",
+  "dt",
+  "dd",
+]);
+
+function rehypeSourceAnchors() {
+  return (tree: HastNode) => {
+    const visit = (node: HastNode) => {
+      if (
+        node.type === "element" &&
+        node.tagName &&
+        sourceAnchorTags.has(node.tagName) &&
+        node.position
+      ) {
+        node.properties = {
+          ...node.properties,
+          "data-source-start": node.position.start.line,
+          "data-source-end": node.position.end.line,
+        };
+      }
+
+      node.children?.forEach(visit);
+    };
+
+    visit(tree);
+  };
+}
+
 const remarkPlugins = [remarkGfm];
-const rehypePlugins = [rehypeRaw, rehypeSlug, rehypeHighlight];
+const rehypePlugins = [
+  rehypeRaw,
+  rehypeSourceAnchors,
+  rehypeSlug,
+  rehypeHighlight,
+];
 
 function CopyCodeButton() {
   const [copied, setCopied] = useState(false);

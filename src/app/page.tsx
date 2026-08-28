@@ -6,6 +6,12 @@ import { EditorLayout } from "@/components/EditorLayout";
 import { StatusBar } from "@/components/StatusBar";
 import { DocumentDrawer } from "@/components/DocumentDrawer";
 import { getDisplayTitle, useDocumentLibrary } from "@/lib/useDocumentLibrary";
+import {
+  getEditorScrollAnchors,
+  getPreviewScrollAnchors,
+  getScrollOffsetForSource,
+  getSourceOffsetForScroll,
+} from "@/lib/scrollSync";
 import { toast } from "sonner";
 
 export default function Home() {
@@ -158,60 +164,109 @@ export default function Home() {
     const preview = previewRef.current;
     if (!editor || !preview) return;
 
-    const onEditorEnter = () => { activePaneRef.current = "editor"; };
-    const onPreviewEnter = () => { activePaneRef.current = "preview"; };
+    const lineCount = markdown.split("\n").length;
+    let editorAnchors = getEditorScrollAnchors(editor, lineCount);
+    let previewAnchors = getPreviewScrollAnchors(preview, lineCount);
 
-    const handleEditorScroll = () => {
-      if (!syncScroll || activePaneRef.current !== "editor") return;
+    const rebuildAnchors = () => {
+      editorAnchors = getEditorScrollAnchors(editor, lineCount);
+      previewAnchors = getPreviewScrollAnchors(preview, lineCount);
+    };
+
+    const syncFromEditor = () => {
+      const sourceOffset = getSourceOffsetForScroll(
+        editorAnchors,
+        editor.scrollTop,
+      );
+      preview.scrollTop = getScrollOffsetForSource(
+        previewAnchors,
+        sourceOffset,
+      );
+    };
+
+    const syncFromPreview = () => {
+      const sourceOffset = getSourceOffsetForScroll(
+        previewAnchors,
+        preview.scrollTop,
+      );
+      editor.scrollTop = getScrollOffsetForSource(editorAnchors, sourceOffset);
+    };
+
+    const scheduleSync = (source: "editor" | "preview") => {
+      if (!syncScroll || activePaneRef.current !== source) return;
       if (syncScrollFrameRef.current !== null) return;
-      syncScrollFrameRef.current = requestAnimationFrame(() => {
-        if (activePaneRef.current !== "editor") {
-          syncScrollFrameRef.current = null;
-          return;
-        }
 
-        const maxEditor = editor.scrollHeight - editor.clientHeight;
-        const maxPreview = preview.scrollHeight - preview.clientHeight;
-        if (maxEditor > 0) {
-          preview.scrollTop = (editor.scrollTop / maxEditor) * maxPreview;
+      syncScrollFrameRef.current = requestAnimationFrame(() => {
+        if (activePaneRef.current === source) {
+          if (source === "editor") {
+            syncFromEditor();
+          } else {
+            syncFromPreview();
+          }
         }
         syncScrollFrameRef.current = null;
       });
     };
 
-    const handlePreviewScroll = () => {
-      if (!syncScroll || activePaneRef.current !== "preview") return;
-      if (syncScrollFrameRef.current !== null) return;
-      syncScrollFrameRef.current = requestAnimationFrame(() => {
-        if (activePaneRef.current !== "preview") {
-          syncScrollFrameRef.current = null;
-          return;
-        }
+    const activatePane = (pane: "editor" | "preview") => {
+      if (activePaneRef.current === pane) return;
 
-        const maxPreview = preview.scrollHeight - preview.clientHeight;
-        const maxEditor = editor.scrollHeight - editor.clientHeight;
-        if (maxPreview > 0) {
-          editor.scrollTop = (preview.scrollTop / maxPreview) * maxEditor;
-        }
+      if (syncScrollFrameRef.current !== null) {
+        cancelAnimationFrame(syncScrollFrameRef.current);
         syncScrollFrameRef.current = null;
-      });
+      }
+      activePaneRef.current = pane;
     };
 
-    editor.addEventListener("pointerenter", onEditorEnter);
-    preview.addEventListener("pointerenter", onPreviewEnter);
+    const activateEditor = () => activatePane("editor");
+    const activatePreview = () => activatePane("preview");
+    const handleEditorScroll = () => scheduleSync("editor");
+    const handlePreviewScroll = () => scheduleSync("preview");
+    const handleResize = () => {
+      rebuildAnchors();
+      const activePane = activePaneRef.current;
+      if (activePane) scheduleSync(activePane);
+    };
+
+    editor.addEventListener("pointerenter", activateEditor);
+    editor.addEventListener("pointerdown", activateEditor);
+    editor.addEventListener("wheel", activateEditor, { passive: true });
+    editor.addEventListener("touchstart", activateEditor, { passive: true });
+    editor.addEventListener("focus", activateEditor);
+    preview.addEventListener("pointerenter", activatePreview);
+    preview.addEventListener("pointerdown", activatePreview);
+    preview.addEventListener("wheel", activatePreview, { passive: true });
+    preview.addEventListener("touchstart", activatePreview, { passive: true });
     editor.addEventListener("scroll", handleEditorScroll, { passive: true });
     preview.addEventListener("scroll", handlePreviewScroll, { passive: true });
+
+    const resizeObserver = new ResizeObserver(handleResize);
+    resizeObserver.observe(editor);
+    resizeObserver.observe(preview);
+    const article = preview.querySelector("article");
+    if (article) resizeObserver.observe(article);
+
+    handleResize();
+
     return () => {
-      editor.removeEventListener("pointerenter", onEditorEnter);
-      preview.removeEventListener("pointerenter", onPreviewEnter);
+      editor.removeEventListener("pointerenter", activateEditor);
+      editor.removeEventListener("pointerdown", activateEditor);
+      editor.removeEventListener("wheel", activateEditor);
+      editor.removeEventListener("touchstart", activateEditor);
+      editor.removeEventListener("focus", activateEditor);
+      preview.removeEventListener("pointerenter", activatePreview);
+      preview.removeEventListener("pointerdown", activatePreview);
+      preview.removeEventListener("wheel", activatePreview);
+      preview.removeEventListener("touchstart", activatePreview);
       editor.removeEventListener("scroll", handleEditorScroll);
       preview.removeEventListener("scroll", handlePreviewScroll);
+      resizeObserver.disconnect();
       if (syncScrollFrameRef.current !== null) {
         cancelAnimationFrame(syncScrollFrameRef.current);
         syncScrollFrameRef.current = null;
       }
     };
-  }, [syncScroll, isReady, focusedPanel]);
+  }, [syncScroll, isReady, focusedPanel, markdown]);
 
   if (!isReady) {
     return (

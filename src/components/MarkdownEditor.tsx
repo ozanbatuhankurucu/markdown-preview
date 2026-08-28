@@ -4,6 +4,8 @@ import {
   RefObject,
   useCallback,
   useEffect,
+  useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -43,14 +45,53 @@ export function MarkdownEditor({
 }: MarkdownEditorProps) {
   const lineNumbersRef = useRef<HTMLDivElement>(null);
   const highlightRef = useRef<HTMLDivElement>(null);
-  const [lineCount, setLineCount] = useState(1);
+  const mirrorRef = useRef<HTMLDivElement>(null);
   const [activeLine, setActiveLine] = useState(1);
+  const [lineHeights, setLineHeights] = useState<number[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const dragCounterRef = useRef(0);
+  const lines = useMemo(() => value.split("\n"), [value]);
+
+  const updateLineMetrics = useCallback(() => {
+    const textarea = editorRef.current;
+    const mirror = mirrorRef.current;
+    if (!textarea || !mirror) return;
+
+    mirror.style.width = `${textarea.clientWidth}px`;
+    const nextHeights = Array.from(
+      mirror.querySelectorAll<HTMLElement>("[data-editor-line]"),
+      (line) => line.offsetHeight,
+    );
+
+    setLineHeights((currentHeights) => {
+      const isUnchanged =
+        currentHeights.length === nextHeights.length &&
+        currentHeights.every((height, index) => height === nextHeights[index]);
+      return isUnchanged ? currentHeights : nextHeights;
+    });
+  }, [editorRef]);
+
+  useLayoutEffect(() => {
+    updateLineMetrics();
+  }, [lines, updateLineMetrics]);
 
   useEffect(() => {
-    setLineCount(value.split("\n").length);
-  }, [value]);
+    const textarea = editorRef.current;
+    if (!textarea) return;
+
+    const observer = new ResizeObserver(updateLineMetrics);
+    observer.observe(textarea);
+
+    let isActive = true;
+    void document.fonts?.ready.then(() => {
+      if (isActive) updateLineMetrics();
+    });
+
+    return () => {
+      isActive = false;
+      observer.disconnect();
+    };
+  }, [editorRef, updateLineMetrics]);
 
   const updateActiveLine = useCallback(() => {
     if (editorRef.current) {
@@ -61,18 +102,18 @@ export function MarkdownEditor({
   const updateHighlightPosition = useCallback(() => {
     const textarea = editorRef.current;
     const highlight = highlightRef.current;
-    if (!textarea || !highlight) return;
-    const lineHeight = parseFloat(getComputedStyle(textarea).lineHeight);
-    const paddingTop = parseFloat(getComputedStyle(textarea).paddingTop);
-    const top =
-      (activeLine - 1) * lineHeight - textarea.scrollTop + paddingTop;
-    highlight.style.top = `${top}px`;
-    highlight.style.height = `${lineHeight}px`;
+    const line = mirrorRef.current?.querySelector<HTMLElement>(
+      `[data-editor-line="${activeLine}"]`,
+    );
+    if (!textarea || !highlight || !line) return;
+
+    highlight.style.top = `${line.offsetTop - textarea.scrollTop}px`;
+    highlight.style.height = `${line.offsetHeight}px`;
   }, [activeLine, editorRef]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     updateHighlightPosition();
-  }, [updateHighlightPosition]);
+  }, [lineHeights, updateHighlightPosition]);
 
   const handleScroll = useCallback(() => {
     if (editorRef.current && lineNumbersRef.current) {
@@ -221,24 +262,53 @@ export function MarkdownEditor({
         }}
         aria-hidden="true"
       >
-        {Array.from({ length: lineCount }, (_, i) => (
+        {lines.map((_, i) => (
           <div
             key={i + 1}
-            style={
-              i + 1 === activeLine
+            style={{
+              height: lineHeights[i],
+              ...(i + 1 === activeLine
                 ? {
                     color: "var(--fg-primary)",
                     background: "var(--active-line-bg)",
                     borderRadius: "2px",
                   }
-                : undefined
-            }
+                : undefined),
+            }}
           >
             {i + 1}
           </div>
         ))}
       </div>
       <div className="relative flex-1 min-h-0">
+        <div
+          ref={mirrorRef}
+          data-editor-mirror
+          className="absolute top-0 left-0 p-4 font-mono text-sm leading-[1.7rem] pointer-events-none"
+          style={{
+            boxSizing: "border-box",
+            visibility: "hidden",
+            whiteSpace: "pre-wrap",
+            overflowWrap: "break-word",
+            tabSize: 8,
+            width: "100%",
+          }}
+          aria-hidden="true"
+        >
+          {lines.map((line, index) => (
+            <div
+              key={index}
+              data-editor-line={index + 1}
+              style={{
+                minHeight: "1.7rem",
+                whiteSpace: "pre-wrap",
+                overflowWrap: "break-word",
+              }}
+            >
+              {line || "\u200b"}
+            </div>
+          ))}
+        </div>
         <div
           ref={highlightRef}
           className="absolute left-0 right-0 pointer-events-none"
@@ -262,6 +332,9 @@ export function MarkdownEditor({
             color: "var(--fg-primary)",
             willChange: "scroll-position",
             caretColor: "var(--fg-primary)",
+            whiteSpace: "pre-wrap",
+            overflowWrap: "break-word",
+            tabSize: 8,
           }}
           spellCheck={false}
           autoComplete="off"
